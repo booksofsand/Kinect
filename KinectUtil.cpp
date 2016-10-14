@@ -27,15 +27,13 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iomanip>
 #include <IO/File.h>
 #include <IO/OpenFile.h>
-#include <USB/Context.h>
 #include <USB/VendorProductId.h>
 #include <USB/DeviceList.h>
 #include <USB/Device.h>
 #include <Math/Math.h>
 #include <Math/Matrix.h>
+#include <Kinect/Internal/Config.h>
 #include <Kinect/Camera.h>
-
-USB::Context usbContext;
 
 /**************
 Helper classes:
@@ -47,20 +45,20 @@ class KinectMatcher // Class to match a Kinect camera device
 	public:
 	bool operator()(const libusb_device_descriptor& dd) const
 		{
-		/* Match Kinect-for-Xbox and Kinect-for-Windows devices: */
-		return dd.idVendor==0x045eU&&(dd.idProduct==0x02aeU||dd.idProduct==0x02bfU);
+		/* Match first-generation Kinect-for-Xbox and Kinect-for-Windows, and second-generation Kinect-for-Windows devices: */
+		return dd.idVendor==0x045eU&&(dd.idProduct==0x02aeU||dd.idProduct==0x02bfU||dd.idProduct==0x02c4U);
 		}
 	};
 
 enum KinectModel // Enumerated type for Kinect models
 	{
-	KINECT_FOR_XBOX_1414,KINECT_FOR_XBOX_1473,KINECT_FOR_WINDOWS_1517
+	KINECT_FOR_XBOX_1414,KINECT_FOR_XBOX_1473,KINECT_FOR_WINDOWS_1517,KINECT_V2_FOR_WINDOWS
 	};
 
 void list(void)
 	{
 	/* Get the list of all USB devices: */
-	USB::DeviceList deviceList(usbContext);
+	USB::DeviceList deviceList;
 	
 	/* Get the number of Kinect camera devices: */
 	size_t numKinects=deviceList.getNumDevices(KinectMatcher());
@@ -76,7 +74,12 @@ void list(void)
 		/* Determine the Kinect's model number: */
 		KinectModel model;
 		libusb_device_descriptor dd=kinect.getDeviceDescriptor();
-		if(dd.idProduct==0x02bfU)
+		if(dd.idProduct==0x02c4U)
+			{
+			/* Kinect-V2-for-Windows: */
+			model=KINECT_V2_FOR_WINDOWS;
+			}
+		else if(dd.idProduct==0x02bfU)
 			{
 			/* Kinect for Windows: */
 			model=KINECT_FOR_WINDOWS_1517;
@@ -110,11 +113,20 @@ void list(void)
 			case KINECT_FOR_WINDOWS_1517:
 				std::cout<<"Kinect for Windows 1517";
 				break;
+			
+			case KINECT_V2_FOR_WINDOWS:
+				std::cout<<"Kinect V2 for Windows";
+				break;
 			}
 		std::cout<<", USB address ";
 		std::cout<<std::setfill('0')<<std::setw(3)<<kinect.getBusNumber()<<":"<<std::setfill('0')<<std::setw(3)<<kinect.getAddress();
 		std::cout<<", device serial number ";
-		if(model==KINECT_FOR_XBOX_1414)
+		if(model==KINECT_V2_FOR_WINDOWS)
+			{
+			/* Get serial number from Kinect V2 camera device: */
+			std::cout<<"V2-"<<kinect.getSerialNumber();
+			}
+		else if(model==KINECT_FOR_XBOX_1414)
 			{
 			/* Get serial number from Kinect camera device: */
 			std::cout<<kinect.getSerialNumber();
@@ -160,11 +172,13 @@ void list(void)
 			while(busNumbers[i]!=busNumber)
 				++i;
 			std::cout<<"Warning: USB bus "<<busNumber<<" is shared by Kinect devices "<<i;
+			++i;
 			for(size_t j=1;j<numKinectsOnBus-1;++j)
 				{
 				while(busNumbers[i]!=busNumber)
 					++i;
 				std::cout<<", "<<i;
+				++i;
 				}
 			while(busNumbers[i]!=busNumber)
 				++i;
@@ -177,7 +191,7 @@ void list(void)
 void resetAll(void)
 	{
 	/* Get the list of all USB devices: */
-	USB::DeviceList deviceList(usbContext);
+	USB::DeviceList deviceList;
 	
 	/* Get the number of Kinect camera devices: */
 	size_t numKinects=deviceList.getNumDevices(KinectMatcher());
@@ -196,7 +210,7 @@ void resetAll(void)
 bool reset(unsigned int index)
 	{
 	/* Get the list of all USB devices: */
-	USB::DeviceList deviceList(usbContext);
+	USB::DeviceList deviceList;
 	
 	/* Get the index-th Kinect device: */
 	USB::Device kinect=deviceList.getDevice(KinectMatcher(),index);
@@ -214,7 +228,7 @@ bool reset(unsigned int index)
 void downloadCalibration(unsigned int index)
 	{
 	/* Open a Kinect camera: */
-	Kinect::Camera camera(usbContext,index);
+	Kinect::Camera camera(index);
 	std::cout<<"Downloading factory calibration data for Kinect "<<camera.getSerialNumber()<<"..."<<std::endl;
 	
 	/* Retrieve the factory calibration data: */
@@ -509,9 +523,9 @@ void downloadCalibration(unsigned int index)
 	depthMatrix=scaleMatrix*depthMatrix;
 	
 	/* Write the depth and color matrices to an intrinsic parameter file: */
-	std::string calibFileName=KINECT_CONFIG_DIR;
+	std::string calibFileName=KINECT_INTERNAL_CONFIG_CONFIGDIR;
 	calibFileName.push_back('/');
-	calibFileName.append(KINECT_CAMERA_INTRINSICPARAMETERSFILENAMEPREFIX);
+	calibFileName.append(KINECT_INTERNAL_CONFIG_CAMERA_INTRINSICPARAMETERSFILENAMEPREFIX);
 	calibFileName.push_back('-');
 	calibFileName.append(camera.getSerialNumber());
 	calibFileName.append(".dat");
@@ -535,7 +549,7 @@ void downloadCalibration(unsigned int index)
 bool setLed(unsigned int index,unsigned int ledState)
 	{
 	/* Get the list of all USB devices: */
-	USB::DeviceList deviceList(usbContext);
+	USB::DeviceList deviceList;
 	
 	/* Get the index-th Kinect motor device: */
 	USB::Device motor=deviceList.getDevice(0x045e,0x02b0,index);
@@ -555,10 +569,6 @@ bool setLed(unsigned int index,unsigned int ledState)
 
 int main(int argc,char* argv[])
 	{
-	/* Initialize the USB context: */
-	usbContext.setDebugLevel(3);
-	usbContext.startEventHandling();
-	
 	/* Parse the command line: */
 	if(argc<2)
 		{

@@ -1,7 +1,7 @@
 /***********************************************************************
 KinectViewer - Extrinsic calibration tool for KinectViewer using a large
 spherical calibration target.
-Copyright (c) 2014-2015 Oliver Kreylos
+Copyright (c) 2014-2016 Oliver Kreylos
 
 This file is part of the Kinect 3D Video Capture Project (Kinect).
 
@@ -36,15 +36,10 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <GLMotif/WidgetManager.h>
 #include <GLMotif/PopupWindow.h>
 #include <GLMotif/RowColumn.h>
-#include <GLMotif/Blind.h>
 #include <GLMotif/Label.h>
 #include <Vrui/DisplayState.h>
 #include <Kinect/Config.h>
-#if KINECT_CONFIG_USE_SHADERPROJECTOR
-#include <Kinect/ShaderProjector.h>
-#else
-#include <Kinect/Projector.h>
-#endif
+#include <Kinect/ProjectorHeader.h>
 
 /**********************************************
 Methods of class SphereExtractorTool::DataItem:
@@ -94,6 +89,16 @@ void SphereExtractorTool::sphereListCallback(const SphereExtractor::SphereList& 
 			ssIt->addSphere(*sIt,weight);
 			}
 		}
+	}
+
+void SphereExtractorTool::maxBlobMergeDistCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData)
+	{
+	/* Update the maximum blob merging distance: */
+	maxBlobMergeDist=int(Math::floor(cbData->value+0.5));
+	
+	/* Update all sphere extractors: */
+	for(std::vector<KinectViewer::KinectStreamer*>::iterator ksIt=application->streamers.begin();ksIt!=application->streamers.end();++ksIt)
+		(*ksIt)->sphereExtractor->setMaxBlobMergeDist(maxBlobMergeDist);
 	}
 
 void SphereExtractorTool::sphereRadiusCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData)
@@ -156,30 +161,6 @@ void SphereExtractorTool::maxResidualCallback(GLMotif::TextFieldSlider::ValueCha
 		(*ksIt)->sphereExtractor->setMatchLimits(minWhite,maxSpread,minBlobSize,radiusTolerance,maxResidual);
 	}
 
-void SphereExtractorTool::spreadCallback(Misc::CallbackData* cbData)
-	{
-	/* Line up all 3D video streamers in a single column: */
-	typedef Kinect::FrameSource::ExtrinsicParameters EP;
-	EP extrinsics=EP::translate(EP::Vector(0,EP::Scalar(application->streamers.size()-1)*Math::div2(EP::Scalar(200)),0));
-	
-	for(std::vector<StreamerState>::iterator ssIt=streamerStates.begin();ssIt!=streamerStates.end();++ssIt)
-		{
-		ssIt->streamer->projector->setExtrinsicParameters(extrinsics);
-		extrinsics.leftMultiply(EP::translate(EP::Vector(0,-200,0)));
-		}
-	}
-
-void SphereExtractorTool::calibrateCallback(Misc::CallbackData* cbData)
-	{
-	}
-
-void SphereExtractorTool::resetCallback(Misc::CallbackData* cbData)
-	{
-	/* Restore the original extrinsic parameters of all 3D video streamers: */
-	for(std::vector<StreamerState>::iterator ssIt=streamerStates.begin();ssIt!=streamerStates.end();++ssIt)
-		ssIt->streamer->projector->setExtrinsicParameters(ssIt->savedExtrinsics);
-	}
-
 void SphereExtractorTool::initClass(void)
 	{
 	/* Create a factory object for the sphere extractor tool class: */
@@ -195,7 +176,7 @@ void SphereExtractorTool::initClass(void)
 
 SphereExtractorTool::SphereExtractorTool(const Vrui::ToolFactory* factory,const Vrui::ToolInputAssignment& inputAssignment)
 	:Vrui::Tool(factory,inputAssignment),
-	 sphereRadius(4.0*2.54),minWhite(128),maxSpread(32),minBlobSize(1000),radiusTolerance(0.2),maxResidual(0.3),
+	 maxBlobMergeDist(1),sphereRadius(4.0*2.54),minWhite(128),maxSpread(32),minBlobSize(1000),radiusTolerance(0.2),maxResidual(0.3),
 	 controlDialog(0),
 	 tracking(false)
 	{
@@ -219,9 +200,6 @@ void SphereExtractorTool::initialize(void)
 		/* Create a new streamer state for this Kinect streamer: */
 		streamerStates.push_back(*ksIt);
 		
-		/* Store the streamer's initial extrinsic parameters: */
-		streamerStates.back().savedExtrinsics=(*ksIt)->projector->getProjectorTransform();
-		
 		/* Open the calibration file: */
 		std::string calibFileName="KinectPoints";
 		char number[10];
@@ -235,12 +213,7 @@ void SphereExtractorTool::initialize(void)
 	controlDialog=new GLMotif::PopupWindow("SphereExtractorToolControlDialog",Vrui::getWidgetManager(),"Sphere Extraction Control");
 	controlDialog->setResizableFlags(true,false);
 	
-	GLMotif::RowColumn* controls=new GLMotif::RowColumn("Controls",controlDialog,false);
-	controls->setOrientation(GLMotif::RowColumn::VERTICAL);
-	controls->setPacking(GLMotif::RowColumn::PACK_TIGHT);
-	controls->setNumMinorWidgets(1);
-	
-	GLMotif::RowColumn* extractorSettings=new GLMotif::RowColumn("ExtractorSettings",controls,false);
+	GLMotif::RowColumn* extractorSettings=new GLMotif::RowColumn("ExtractorSettings",controlDialog,false);
 	extractorSettings->setOrientation(GLMotif::RowColumn::VERTICAL);
 	extractorSettings->setPacking(GLMotif::RowColumn::PACK_TIGHT);
 	extractorSettings->setNumMinorWidgets(2);
@@ -275,6 +248,15 @@ void SphereExtractorTool::initialize(void)
 	maxSpreadSlider->setValue(maxSpread);
 	maxSpreadSlider->getValueChangedCallbacks().add(this,&SphereExtractorTool::maxSpreadCallback);
 	
+	new GLMotif::Label("MaxBlobMergeDistLabel",extractorSettings,"Blob Merge Distance");
+	
+	GLMotif::TextFieldSlider* maxBlobMergeDistSlider=new GLMotif::TextFieldSlider("MaxBlobMergeDistSlider",extractorSettings,8,ss.fontHeight*15.0f);
+	maxBlobMergeDistSlider->setSliderMapping(GLMotif::TextFieldSlider::LINEAR);
+	maxBlobMergeDistSlider->setValueType(GLMotif::TextFieldSlider::INT);
+	maxBlobMergeDistSlider->setValueRange(1,100,1.0);
+	maxBlobMergeDistSlider->setValue(maxBlobMergeDist);
+	maxBlobMergeDistSlider->getValueChangedCallbacks().add(this,&SphereExtractorTool::maxBlobMergeDistCallback);
+	
 	new GLMotif::Label("MinBlobSizeLabel",extractorSettings,"Minimum Blob Size");
 	
 	GLMotif::TextFieldSlider* minBlobSizeSlider=new GLMotif::TextFieldSlider("MinBlobSizeSlider",extractorSettings,8,ss.fontHeight*15.0f);
@@ -307,45 +289,6 @@ void SphereExtractorTool::initialize(void)
 	maxResidualSlider->getValueChangedCallbacks().add(this,&SphereExtractorTool::maxResidualCallback);
 	
 	extractorSettings->manageChild();
-	
-	GLMotif::RowColumn* layoutButtons=new GLMotif::RowColumn("LayoutButtons",controls,false);
-	layoutButtons->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-	layoutButtons->setPacking(GLMotif::RowColumn::PACK_GRID);
-	layoutButtons->setNumMinorWidgets(1);
-	
-	GLMotif::Button* spreadButton=new GLMotif::Button("SpreadButton",layoutButtons,"Spread");
-	spreadButton->getSelectCallbacks().add(this,&SphereExtractorTool::spreadCallback);
-	
-	GLMotif::Button* calibrateButton=new GLMotif::Button("CalibrateButton",layoutButtons,"Calibrate");
-	calibrateButton->getSelectCallbacks().add(this,&SphereExtractorTool::calibrateCallback);
-	
-	GLMotif::Button* resetButton=new GLMotif::Button("ResetButton",layoutButtons,"Reset");
-	resetButton->getSelectCallbacks().add(this,&SphereExtractorTool::resetCallback);
-	
-	layoutButtons->manageChild();
-	
-	GLMotif::RowColumn* tiePointFields=new GLMotif::RowColumn("LayoutButtons",controls,false);
-	tiePointFields->setOrientation(GLMotif::RowColumn::HORIZONTAL);
-	tiePointFields->setPacking(GLMotif::RowColumn::PACK_TIGHT);
-	tiePointFields->setNumMinorWidgets(1);
-	
-	new GLMotif::Label("NumTiePointsLabel",tiePointFields,"Tie Points");
-	
-	numTiePoints=new GLMotif::TextField("NumTiePointsTextField",tiePointFields,4);
-	numTiePoints->setValue(0);
-	
-	tiePointFields->setColumnWeight(1,1.0);
-	
-	new GLMotif::Label("NumAllTiePointsLabel",tiePointFields,"All Tie Points");
-	
-	numAllTiePoints=new GLMotif::TextField("NumAllTiePointsTextField",tiePointFields,4);
-	numAllTiePoints->setValue(0);
-	
-	tiePointFields->setColumnWeight(3,1.0);
-	
-	tiePointFields->manageChild();
-	
-	controls->manageChild();
 	
 	/* Pop up the control dialog: */
 	Vrui::popupPrimaryWidget(controlDialog);
@@ -394,7 +337,6 @@ void SphereExtractorTool::buttonCallback(int,Vrui::InputDevice::ButtonCallbackDa
 		tracking=false;
 		
 		/* Find the highest-weighted sphere accumulator for each streamer state: */
-		bool allValid=true;
 		for(std::vector<StreamerState>::iterator ssIt=streamerStates.begin();ssIt!=streamerStates.end();++ssIt)
 			{
 			Scalar maxWeight=Scalar(0);
@@ -417,27 +359,13 @@ void SphereExtractorTool::buttonCallback(int,Vrui::InputDevice::ButtonCallbackDa
 				(*ssIt->calibFile)<<maxCenter[0]<<','<<maxCenter[1]<<','<<maxCenter[2]<<std::endl;
 				
 				/* Store the calibration tie point: */
-				ssIt->tiePoints.push_back(StreamerState::TiePoint(maxCenter,true));
+				ssIt->tiePoints.push_back(maxCenter);
 				}
 			else
 				{
 				std::cout<<"Streamer "<<(ssIt-streamerStates.begin())<<": no sphere found"<<std::endl;
 				(*ssIt->calibFile)<<"NaN, NaN, NaN"<<std::endl;
-				
-				/* Store an invalid calibration tie point: */
-				ssIt->tiePoints.push_back(StreamerState::TiePoint(maxCenter,false));
-				
-				allValid=false;
 				}
-			}
-		
-		/* Update the calibration displays: */
-		++ntp;
-		numTiePoints->setValue(ntp);
-		if(allValid)
-			{
-			++natp;
-			numAllTiePoints->setValue(natp);
 			}
 		
 		/* Reset all sphere accumulators for the next tracking period: */
@@ -494,9 +422,8 @@ void SphereExtractorTool::display(GLContextData& contextData) const
 			glMultMatrix(ssIt->streamer->projector->getProjectorTransform());
 			
 			glBegin(GL_POINTS);
-			for(std::vector<StreamerState::TiePoint>::const_iterator tpIt=ssIt->tiePoints.begin();tpIt!=ssIt->tiePoints.end();++tpIt)
-				if(tpIt->value)
-					glVertex(*tpIt);
+			for(std::vector<Point>::const_iterator tpIt=ssIt->tiePoints.begin();tpIt!=ssIt->tiePoints.end();++tpIt)
+				glVertex(*tpIt);
 			glEnd();
 			
 			glPopMatrix();

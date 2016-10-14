@@ -1,7 +1,7 @@
 /***********************************************************************
 SphereExtractor - Helper class to identify and extract spheres of known
 radii in depth images.
-Copyright (c) 2014 Oliver Kreylos
+Copyright (c) 2014-2015 Oliver Kreylos
 
 This file is part of the Kinect 3D Video Capture Project (Kinect).
 
@@ -74,7 +74,7 @@ struct SphereBlob:public Images::Blob<DepthPixel> // Structure to fit spheres to
 		:Base(x,y,pixel,creator)
 		{
 		/* Calculate the pixel's depth-corrected depth image space position: */
-		Point dp(Scalar(x),Scalar(y),Scalar(creator.pixelDepthCorrection[y*creator.depthFrameSize[0]+x].correct(float(pixel))));
+		Point dp(Scalar(x),Scalar(y),creator.pixelDepthCorrection!=0?Scalar(creator.pixelDepthCorrection[y*creator.depthFrameSize[0]+x].correct(float(pixel))):Scalar(pixel));
 		
 		/* Unproject the depth image-space point: */
 		Point cp=creator.depthProjection.transform(dp);
@@ -111,7 +111,7 @@ struct SphereBlob:public Images::Blob<DepthPixel> // Structure to fit spheres to
 		Base::addPixel(x,y,pixel,creator);
 		
 		/* Calculate the pixel's depth-corrected depth image space position: */
-		Point dp(Scalar(x),Scalar(y),Scalar(creator.pixelDepthCorrection[y*creator.depthFrameSize[0]+x].correct(float(pixel))));
+		Point dp(Scalar(x),Scalar(y),creator.pixelDepthCorrection!=0?Scalar(creator.pixelDepthCorrection[y*creator.depthFrameSize[0]+x].correct(float(pixel))):Scalar(pixel));
 		
 		/* Unproject the depth image-space point: */
 		Point cp=creator.depthProjection.transform(dp);
@@ -211,7 +211,7 @@ class BlobForegroundSelector // Functor class to select foreground pixels in Kin
 		if(pixel<Kinect::FrameSource::invalidDepth)
 			{
 			/* Project the depth image pixel from depth image space to color image space: */
-			Point colorPixel=creator.colorDepthProjection.transform(Point(Scalar(x),Scalar(y),Scalar(creator.pixelDepthCorrection[y*creator.depthFrameSize[0]+x].correct(float(pixel)))));
+			Point colorPixel=creator.colorDepthProjection.transform(Point(Scalar(x),Scalar(y),creator.pixelDepthCorrection!=0?Scalar(creator.pixelDepthCorrection[y*creator.depthFrameSize[0]+x].correct(float(pixel))):Scalar(pixel)));
 			
 			/* Check if the color pixel is mostly white: */
 			if(colorPixel[0]>=Scalar(0)&&colorPixel[0]<Scalar(creator.colorFrameSize[0])&&colorPixel[1]>=Scalar(0)&&colorPixel[1]<Scalar(creator.colorFrameSize[1]))
@@ -331,12 +331,16 @@ void* SphereExtractor::frameProcessingThreadMethod(void)
 	for(int i=0;i<2;++i)
 		blobCreator.depthFrameSize[i]=depthFrameSize[i];
 	blobCreator.pixelDepthCorrection=dcBuffer;
+	
+	/* Shift the depth projection matrix by half a pixel in both directions to use integer pixel coordinates: */
 	blobCreator.depthProjection=depthProjection;
 	PTransform shift=PTransform::identity;
 	PTransform::Matrix& shm=shift.getMatrix();
 	shm(0,3)=Scalar(0.5);
 	shm(1,3)=Scalar(0.5);
 	blobCreator.depthProjection*=shift;
+	
+	/* Calculate a direct transformation matrix from depth image space to color image space: */
 	for(int i=0;i<2;++i)
 		blobCreator.colorFrameSize[i]=colorFrameSize[i];
 	blobCreator.colorDepthProjection=PTransform::identity;
@@ -366,16 +370,16 @@ void* SphereExtractor::frameProcessingThreadMethod(void)
 		Threads::Mutex::Lock inColorFrameLock(inColorFrameMutex);
 		colorFrame=inColorFrame;
 		}
-		if(colorFrame.getBuffer()==0)
+		if(!colorFrame.isValid())
 			continue;
 		
 		/* Extract all foreground blobs from the raw depth frame: */
-		blobCreator.colorFrame=static_cast<const ColorPixel*>(colorFrame.getBuffer());
+		blobCreator.colorFrame=colorFrame.getData<ColorPixel>();
 		blobCreator.minWhite=minWhite;
 		blobCreator.maxSpread=maxSpread;
-		const DepthPixel* framePixels=static_cast<const DepthPixel*>(depthFrame.getBuffer());
+		const DepthPixel* framePixels=depthFrame.getData<DepthPixel>();
 		BlobForegroundSelector bfs(blobCreator);
-		BlobMergeChecker bmc(1);
+		BlobMergeChecker bmc(maxBlobMergeDist);
 		std::vector<SphereBlob> blobs=Images::extractBlobs<SphereBlob>(depthFrameSize,framePixels,bfs,bmc,blobCreator);
 		
 		/* Find all large-enough blobs whose spheres match the desired radius and have low approximation residual: */
@@ -449,6 +453,11 @@ SphereExtractor::~SphereExtractor(void)
 	{
 	/* Stop background processing, just in case: */
 	stopStreaming();
+	}
+
+void SphereExtractor::setMaxBlobMergeDist(int newMaxBlobMergeDist)
+	{
+	maxBlobMergeDist=newMaxBlobMergeDist;
 	}
 
 void SphereExtractor::setSphereRadius(SphereExtractor::Scalar newSphereRadius)

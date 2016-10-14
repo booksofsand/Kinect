@@ -1,7 +1,7 @@
 /***********************************************************************
 MeasurementTool - Tool to measure 3D positions from the depth image
 stream.
-Copyright (c) 2014 Oliver Kreylos
+Copyright (c) 2014-2015 Oliver Kreylos
 
 This file is part of the Kinect 3D Video Capture Project (Kinect).
 

@@ -1,7 +1,7 @@
 /***********************************************************************
 SphereExtractor - Helper class to identify and extract spheres of known
 radii in depth images.
-Copyright (c) 2014 Oliver Kreylos
+Copyright (c) 2014-2015 Oliver Kreylos
 
 This file is part of the Kinect 3D Video Capture Project (Kinect).
 
@@ -58,9 +58,10 @@ class SphereExtractor
 	private:
 	unsigned int depthFrameSize[2]; // Width and height of source's depth frames
 	const PixelDepthCorrection* dcBuffer; // Pointer to frame source's per-pixel depth correction buffer
-	PTransform depthProjection; // Frame source's depth unprojection matrix
+	PTransform depthProjection; // Frame source's depth unprojection matrix, shifted by 0.5 pixels to be able to use integer pixel positions
 	unsigned int colorFrameSize[2]; // Width and height of source's color frames
 	PTransform colorProjection; // Frame source's color projection matrix
+	int maxBlobMergeDist; // Maximum depth distance between adjacent pixels to merge their respective blobs
 	Scalar sphereRadius; // Radius of sphere in 3D camera space's measurement unit
 	ColorPixel::Component minWhite; // Minimum color component value to classify a pixel as white
 	ColorPixel::Component maxSpread; // Maximum spread between color component values to classify a pixel as white
@@ -85,6 +86,7 @@ class SphereExtractor
 	~SphereExtractor(void);
 	
 	/* Methods: */
+	void setMaxBlobMergeDist(int newMaxBlobMergeDist); // Sets a new maximum pixel depth distance to merge adjacent blobs
 	void setSphereRadius(Scalar newSphereRadius); // Sets a new target radius for sphere extraction
 	void setMatchLimits(unsigned int newMinWhite,unsigned int newMaxSpread,size_t newMinBlobSize,Scalar newRadiusTolerance,Scalar newMaxResidual); // Sets new sphere matching parameters
 	void startStreaming(StreamingCallback* newStreamingCallback); // Starts processing depth frames in the background; calls the provided callback function every time a depth frame has been processed

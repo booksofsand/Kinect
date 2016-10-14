@@ -1,7 +1,7 @@
 /***********************************************************************
 KinectViewer - Extrinsic calibration tool for KinectViewer using a large
 spherical calibration target.
-Copyright (c) 2014-2015 Oliver Kreylos
+Copyright (c) 2014-2016 Oliver Kreylos
 
 This file is part of the Kinect 3D Video Capture Project (Kinect).
 
@@ -26,15 +26,12 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 
 #include <vector>
 #include <iostream>
-#include <Geometry/ValuedPoint.h>
 #include <GL/gl.h>
 #include <GL/GLObject.h>
-#include <GLMotif/TextField.h>
 #include <GLMotif/TextFieldSlider.h>
 #include <Vrui/Application.h>
 #include <Vrui/Tool.h>
 #include <Vrui/GenericToolFactory.h>
-#include <Kinect/FrameSource.h>
 
 #include "SphereExtractor.h"
 #include "KinectViewer.h"
@@ -89,22 +86,17 @@ class SphereExtractorTool:public Vrui::Tool,public Vrui::Application::Tool<Kinec
 	
 	struct StreamerState // Structure to store per-streamer sphere extraction state
 		{
-		/* Embedded classes: */
-		public:
-		typedef Geometry::ValuedPoint<Point,bool> TiePoint; // Point with validity flag
-		
 		/* Elements: */
+		public:
 		KinectViewer::KinectStreamer* streamer; // Streamer associated with this sphere extraction state
-		Kinect::FrameSource::ExtrinsicParameters savedExtrinsics; // Saved extrinsic parameters of streamer's 3D video source
 		SphereExtractor* extractor; // The sphere extractor object
 		std::vector<SphereState> sphereStates; // States of all spheres currently tracked by the streamer's sphere extractor
 		std::ostream* calibFile; // File to which to write calibration tie points
-		std::vector<TiePoint> tiePoints; // List of previously extracted tie points
+		std::vector<Point> tiePoints; // List of previously extracted tie points
 		
 		/* Constructors and destructors: */
 		StreamerState(KinectViewer::KinectStreamer* sStreamer)
-			:streamer(sStreamer),
-			 extractor(streamer->sphereExtractor),
+			:streamer(sStreamer),extractor(streamer->sphereExtractor),
 			 calibFile(0)
 			{
 			}
@@ -124,6 +116,7 @@ class SphereExtractorTool:public Vrui::Tool,public Vrui::Application::Tool<Kinec
 	/* Elements: */
 	private:
 	static SphereExtractorToolFactory* factory; // Pointer to the factory object for this class
+	int maxBlobMergeDist;
 	double sphereRadius;
 	unsigned int minWhite;
 	unsigned int maxSpread;
@@ -131,25 +124,20 @@ class SphereExtractorTool:public Vrui::Tool,public Vrui::Application::Tool<Kinec
 	double radiusTolerance;
 	double maxResidual;
 	GLMotif::PopupWindow* controlDialog; // Dialog to change sphere extraction parameters
-	GLMotif::TextField* numTiePoints; // Text field showing the number of collected tie points
-	GLMotif::TextField* numAllTiePoints; // Text field showing the number of tie points shared by all cameras
 	
 	volatile bool tracking; // Flag whether the sphere extractor tool is currently tracking spheres
 	std::vector<StreamerState> streamerStates; // List of streamer states
-	unsigned int ntp,natp; // Number of collected tie points and number of collected tie points shared by all 3D video streamers
 	
 	/* Private methods: */
 	void sphereListCallback(const SphereExtractor::SphereList& spheres,unsigned int streamerIndex);
+	void maxBlobMergeDistCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
 	void sphereRadiusCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
 	void minWhiteCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
 	void maxSpreadCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
 	void minBlobSizeCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
 	void radiusToleranceCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
 	void maxResidualCallback(GLMotif::TextFieldSlider::ValueChangedCallbackData* cbData);
-	void spreadCallback(Misc::CallbackData* cbData);
-	void calibrateCallback(Misc::CallbackData* cbData);
-	void resetCallback(Misc::CallbackData* cbData);
-	
+
 	/* Constructors and destructors: */
 	public:
 	static void initClass(void);

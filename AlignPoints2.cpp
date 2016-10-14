@@ -27,6 +27,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <vector>
 #include <iostream>
 #include <Misc/File.h>
+#include <Misc/ValueCoder.h>
 #include <IO/ValueSource.h>
 #include <Math/Math.h>
 #include <Math/Constants.h>
@@ -39,6 +40,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Geometry/ValuedPoint.h>
 #include <Geometry/GeometryValueCoders.h>
 #include <Geometry/OutputOperators.h>
+#include <Geometry/GeometryValueCoders.h>
 #include <Geometry/LevenbergMarquardtMinimizer.h>
 #include <GL/gl.h>
 #include <GL/GLColorTemplates.h>
@@ -454,7 +456,7 @@ calcBundleAlignment(
 	
 	/* Print transformations from all other point sets to the first one: */
 	for(unsigned int i=1;i<numPointSets;++i)
-		std::cout<<"Best transformation from set "<<i<<" to set 0: "<<transforms[i*numPointSets+0]<<std::endl;
+		std::cout<<"Best transformation from set "<<i<<" to set 0: "<<Misc::ValueCoder<Transform>::encode(transforms[i*numPointSets+0])<<std::endl;
 	
 	/* Transform all point sets to the first one: */
 	for(unsigned int i=1;i<numPointSets;++i)

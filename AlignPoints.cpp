@@ -79,7 +79,6 @@ findTransform(std::vector<typename TransformFitterParam::Point>& points0,
 		/* Minimize the distance: */
 		Geometry::LevenbergMarquardtMinimizer<TransformFitterParam> minimizer;
 		minimizer.maxNumIterations=500000;
-		minimizer.epsilon2=1.0e-40;
 		TransformFitterParam tf(numPoints,&cPoints0[0],&points1[0]);
 		tf.setTransform(bestTransform);
 		typename TransformFitterParam::Scalar result=minimizer.minimize(tf);
@@ -451,10 +450,7 @@ AlignPoints::AlignPoints(int& argc,char**& argv,char**& appDefaults)
 			{
 			OGTransform finalTransform=preTransform;
 			#if 1
-			OGTransform first=findTransform2<OGTransformFitter>(points[0],points[1]);
-			finalTransform*=findTransform<OGTransformFitter>(points[0],points[1]);
-			finalTransform*=first;
-			finalTransform.renormalize();
+			finalTransform*=findTransform2<OGTransformFitter>(points[0],points[1]);
 			#else
 			finalTransform*=findTransform<OGTransformFitter>(points[0],points[1]);
 			#endif

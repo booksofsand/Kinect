@@ -1,7 +1,7 @@
 /***********************************************************************
 MeasurementTool - Tool to measure 3D positions from the depth image
 stream.
-Copyright (c) 2014 Oliver Kreylos
+Copyright (c) 2014-2015 Oliver Kreylos
 
 This file is part of the Kinect 3D Video Capture Project (Kinect).
 
@@ -52,7 +52,10 @@ void MeasurementTool::averageDepthFrameReady(int)
 		/* Calculate the point position in camera space: */
 		selectedPoint[0]=double(x)+0.5;
 		selectedPoint[1]=double(y)+0.5;
-		selectedPoint[2]=double(application->depthCorrection[index].correct(application->averageFrameDepth[index]/application->averageFrameForeground[index]));
+		if(application->depthCorrection!=0)
+			selectedPoint[2]=double(application->depthCorrection[index].correct(application->averageFrameDepth[index]/application->averageFrameForeground[index]));
+		else
+			selectedPoint[2]=double(application->averageFrameDepth[index]/application->averageFrameForeground[index]);
 		
 		/* Transform the point to world space and print it: */
 		Point worldPoint=application->intrinsicParameters.depthProjection.transform(selectedPoint);
@@ -93,10 +96,20 @@ void MeasurementTool::buttonCallback(int buttonSlotIndex,Vrui::InputDevice::Butt
 	if(cbData->newButtonState)
 		{
 		selectedPoint=Point(application->calcImagePoint(getButtonDeviceRay(0)));
+		#if 0
 		if(selectedPoint[0]>=-double(application->depthFrameSize[0])&&selectedPoint[0]<0.0&&selectedPoint[1]>=0.0&&selectedPoint[1]<double(application->depthFrameSize[1]))
 			{
 			/* Request an average depth frame from the main application: */
 			application->requestAverageFrame(Misc::createFunctionCall(this,&MeasurementTool::averageDepthFrameReady));
 			}
+		#else
+		RawKinectViewer::CPoint imagePoint=application->getDepthImagePoint(selectedPoint);
+		if(imagePoint[2]>=RawKinectViewer::CPoint::Scalar(0))
+			{
+			/* Transform the image point to world space and print it: */
+			RawKinectViewer::CPoint worldPoint=application->intrinsicParameters.depthProjection.transform(imagePoint);
+			std::cout<<std::setw(20)<<worldPoint<<std::endl;
+			}
+		#endif
 		}
 	}
