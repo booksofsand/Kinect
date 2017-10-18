@@ -25,6 +25,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <IO/File.h>
 #include <Kinect/FrameBuffer.h>
 #include <Kinect/FrameSource.h>
+#include <iostream>  // MM: added
 
 namespace Kinect {
 
@@ -126,6 +127,7 @@ Methods of class DepthFrameWriter:
 
 void DepthFrameWriter::writeManyBits(Misc::UInt32 bits,unsigned int numBits)
 	{
+	std::cout << "In DepthFrameWriter::writeManyBits." << std::endl;  // MM: added
 	while(numBits>0)
 		{
 		/* Figure out how many bits can be copied in one go: */
@@ -152,6 +154,7 @@ void DepthFrameWriter::writeManyBits(Misc::UInt32 bits,unsigned int numBits)
 		if(numBits>0)
 			bits=bits&((0x1U<<numBits)-0x1U);
 		}
+	std::cout << "Done with DepthFrameWriter::writeManyBits." << std::endl;  // MM: added
 	}
 
 void DepthFrameWriter::flush(void)
@@ -177,6 +180,7 @@ DepthFrameWriter::DepthFrameWriter(IO::File& sSink,const unsigned int sSize[2])
 	 sink(sSink),
 	 currentBits(0x0U),currentBitsLeft(32)
 	{
+	std::cout << "Making DepthFrameWriter::DepthFrameWriter." << std::endl;  // MM: added
 	/* Create the Hilbert curve offset array: */
 	hilbertCurve.init(size);
 	
@@ -201,6 +205,7 @@ DepthFrameWriter::~DepthFrameWriter(void)
 
 size_t DepthFrameWriter::writeFrame(const FrameBuffer& frame)
 	{
+	std::cout << "In DepthFrameWriter::writeFrame." << std::endl;  // MM: added
 	compressedSize=0;
 	
 	/* Write the frame's time stamp: */
@@ -266,6 +271,7 @@ size_t DepthFrameWriter::writeFrame(const FrameBuffer& frame)
 	/* Flush the bit buffer: */
 	flush();
 	
+	std::cout << "Done with DepthFrameWriter::writeFrame." << std::endl;  // MM: added
 	return compressedSize;
 	}
 

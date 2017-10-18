@@ -27,6 +27,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Math/Constants.h>
 #include <Kinect/FrameBuffer.h>
 #include <Kinect/FrameSource.h>
+#include <iostream>  // MM: added
 
 namespace Kinect {
 
@@ -36,6 +37,7 @@ Methods of class DepthFrameReader:
 
 void DepthFrameReader::readHuffmanTree(unsigned int& numLeaves,DepthFrameReader::HuffmanNode*& nodes)
 	{
+	std::cout << "In DepthFrameReader::readHuffmanTree." << std::endl;  // MM: added
 	/* Read the number of leaf nodes: */
 	numLeaves=source.read<Misc::UInt32>();
 	
@@ -48,6 +50,7 @@ void DepthFrameReader::readHuffmanTree(unsigned int& numLeaves,DepthFrameReader:
 		nodes[i].left=source.read<Misc::UInt32>();
 		nodes[i].right=source.read<Misc::UInt32>();
 		}
+	std::cout << "Done with DepthFrameReader::readHuffmanTree." << std::endl;  // MM: added
 	}
 
 void DepthFrameReader::fillBitBuffer(void)
@@ -70,6 +73,7 @@ DepthFrameReader::DepthFrameReader(IO::File& sSource)
 	 spanLengthNumLeaves(0),spanLengthNodes(0),
 	 currentBits(0x0U),currentBitMask(0x0U)
 	{
+	std::cout << "Making DepthFrameReader::DepthFrameReader." << std::endl;  // MM: added
 	/* Read the frame size from the source: */
 	for(int i=0;i<2;++i)
 		size[i]=source.read<Misc::UInt32>();
@@ -91,6 +95,7 @@ DepthFrameReader::~DepthFrameReader(void)
 FrameBuffer DepthFrameReader::readNextFrame(void)
 	{
 	/* Create the result frame: */
+	std::cout << "In DepthFrameReader::readNextFrame." << std::endl;  // MM: added
 	FrameBuffer result(size[0],size[1],size[0]*size[1]*sizeof(FrameSource::DepthPixel));
 	
 	/* Return a dummy frame if the file is over: */
@@ -183,4 +188,5 @@ FrameBuffer DepthFrameReader::readNextFrame(void)
 	return result;
 	}
 
+	std::cout << "Done with DepthFrameReader::readNextFrame." << std::endl;  // MM: added
 }

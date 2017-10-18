@@ -32,6 +32,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #if KINECT_CONFIG_HAVE_LIBREALSENSE
 #include <Kinect/CameraRealSense.h>
 #endif
+#include <iostream>  // MM: added
 
 namespace Kinect {
 
@@ -41,6 +42,7 @@ Namespace-global functions:
 
 DirectFrameSource* openDirectFrameSource(unsigned int index)
 	{
+	std::cout << "Making openDirectFrameSource (from index)." << std::endl;  // MM: added
 	/* Acquire a USB context to prevent it from being created/destroyed repeatedly: */
 	USB::ContextPtr usbContext=USB::Context::acquireContext();
 	
@@ -85,6 +87,7 @@ DirectFrameSource* openDirectFrameSource(unsigned int index)
 
 DirectFrameSource* openDirectFrameSource(const char* serialNumber)
 	{
+	std::cout << "Making openDirectFrameSource (from serialNumber)." << std::endl;  // MM: added
 	/* Determine the type of camera from the given serial number: */
 	const char* snPtr;
 	for(snPtr=serialNumber;*snPtr!='\0'&&*snPtr!='-';++snPtr)

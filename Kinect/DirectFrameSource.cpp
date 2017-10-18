@@ -43,6 +43,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <GLMotif/FileSelectionHelper.h>
 #include <Kinect/Internal/Config.h>
 #include <Kinect/FrameBuffer.h>
+#include <iostream>  // MM: added
 
 namespace Kinect {
 
@@ -58,6 +59,7 @@ Methods of class DirectFrameSource:
 
 void DirectFrameSource::processDepthFrameBackground(FrameBuffer& depthFrame)
 	{
+	std::cout << "In DirectFrameSource::processDepthFrameBackground." << std::endl;  // MM: added
 	/* Check if a background capture is currently active: */
 	if(backgroundCaptureNumFrames>0)
 		{
@@ -139,6 +141,7 @@ void DirectFrameSource::processDepthFrameBackground(FrameBuffer& depthFrame)
 				*dfPtr=invalidDepth; // Mark the pixel as invalid
 			}
 		}
+	std::cout << "Done with DirectFrameSource::processDepthFrameBackground." << std::endl;  // MM: added
 	}
 
 void DirectFrameSource::removeBackgroundToggleCallback(GLMotif::ToggleButton::ValueChangedCallbackData* cbData)
@@ -212,6 +215,7 @@ DirectFrameSource::DirectFrameSource(void)
 	 backgroundCaptureNumFrames(0),backgroundCaptureCallback(0),
 	 removeBackground(false),backgroundRemovalFuzz(3)
 	{
+	  std::cout << "Making DirectFrameSource::DirectFrameSource." << std::endl;  // MM: added
 	}
 
 DirectFrameSource::~DirectFrameSource(void)
@@ -221,6 +225,7 @@ DirectFrameSource::~DirectFrameSource(void)
 
 FrameSource::ExtrinsicParameters DirectFrameSource::getExtrinsicParameters(void)
 	{
+	std::cout << "In DirectFrameSource::getExtrinsicParameters." << std::endl;  // MM: added
 	/* Assemble the name of the extrinsic parameter file: */
 	std::string extrinsicParameterFileName=KINECT_INTERNAL_CONFIG_CONFIGDIR;
 	extrinsicParameterFileName.push_back('/');
@@ -297,10 +302,12 @@ void DirectFrameSource::configure(Misc::ConfigurationFileSection& configFileSect
 	
 	/* Enable background removal: */
 	setRemoveBackground(configFileSection.retrieveValue<bool>("./removeBackground",getRemoveBackground()));
+	std::cout << "Done with DirectFrameSource::getExtrinsicParameters." << std::endl;  // MM: added
 	}
 
 void DirectFrameSource::buildSettingsDialog(GLMotif::RowColumn* settingsDialog)
 	{
+	std::cout << "In DirectFrameSource::buildSettingsDialog." << std::endl;  // MM: added
 	const GLMotif::StyleSheet& ss=*settingsDialog->getStyleSheet();
 	
 	/* Create a button panel to toggle background removal and creation: */
@@ -364,10 +371,12 @@ void DirectFrameSource::buildSettingsDialog(GLMotif::RowColumn* settingsDialog)
 	backgroundRemovalFuzzSlider->getValueChangedCallbacks().add(this,&DirectFrameSource::backgroundRemovalFuzzCallback);
 	
 	sliderBox->manageChild();
+	std::cout << "Done with DirectFrameSource::buildSettingsDialog." << std::endl;  // MM: added
 	}
 
 void DirectFrameSource::captureBackground(unsigned int numFrames,bool replace,DirectFrameSource::BackgroundCaptureCallback* newBackgroundCaptureCallback)
 	{
+	std::cout << "In DirectFrameSource::captureBackground." << std::endl;  // MM: added
 	/* Remember the background capture callback: */
 	delete backgroundCaptureCallback;
 	backgroundCaptureCallback=newBackgroundCaptureCallback;
@@ -391,10 +400,12 @@ void DirectFrameSource::captureBackground(unsigned int numFrames,bool replace,Di
 	
 	/* Start capturing background frames: */
 	backgroundCaptureNumFrames=numFrames;
+	std::cout << "Done with DirectFrameSource::captureBackground." << std::endl;  // MM: added
 	}
 
 bool DirectFrameSource::loadDefaultBackground(void)
 	{
+	std::cout << "DirectFrameSource::loadDefaultBackground." << std::endl;  // MM: added
 	/* Compose the default background file name by looking for a serial number-tagged file in the configuration directory: */
 	std::string backgroundFileName=KINECT_INTERNAL_CONFIG_CONFIGDIR;
 	backgroundFileName.push_back('/');
@@ -429,6 +440,7 @@ bool DirectFrameSource::loadDefaultBackground(void)
 
 void DirectFrameSource::loadBackground(const char* fileNamePrefix)
 	{
+	std::cout << "In DirectFrameSource::loadBackground (from filename)." << std::endl;  // MM: added
 	/* Compose the background file name by looking for a serial number-tagged file: */
 	std::string backgroundFileName=fileNamePrefix;
 	backgroundFileName.push_back('-');
@@ -439,10 +451,12 @@ void DirectFrameSource::loadBackground(const char* fileNamePrefix)
 	IO::FilePtr backgroundFile=IO::Directory::getCurrent()->openFile(backgroundFileName.c_str());
 	backgroundFile->setEndianness(Misc::LittleEndian);
 	loadBackground(*backgroundFile);
+	std::cout << "Done with DirectFrameSource::loadBackground (from filename)." << std::endl;  // MM: added
 	}
 
 void DirectFrameSource::loadBackground(IO::File& file)
 	{
+	std::cout << "In DirectFrameSource::loadBackground (from file)." << std::endl;  // MM: added
 	/* Read the frame header: */
 	Misc::UInt32 fileFrameSize[2];
 	file.read<Misc::UInt32>(fileFrameSize,2);
@@ -461,6 +475,7 @@ void DirectFrameSource::loadBackground(IO::File& file)
 	/* Install the new background frame: */
 	delete[] backgroundFrame;
 	backgroundFrame=newBackgroundFrame.releaseTarget();
+	std::cout << "Done with DirectFrameSource::loadBackground (from file)." << std::endl;  // MM: added
 	}
 
 void DirectFrameSource::setMaxDepth(unsigned int newMaxDepth,bool replace)
