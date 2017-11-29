@@ -184,9 +184,7 @@ FrameBuffer DepthFrameReader::readNextFrame(void)
 	
 	/* Flush the bit buffer; frames start at byte-boundaries: */
 	flushBits();
-	
+	std::cout << "In FrameSource::DepthCorrection* FileFrameSource::getDepthCorrectionParameters." << std::endl; // MM: testing	
 	return result;
 	}
-
-	std::cout << "Done with DepthFrameReader::readNextFrame." << std::endl;  // MM: added
 }
