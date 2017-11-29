@@ -26,7 +26,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <Misc/SizedTypes.h>
 #include <IO/File.h>
 #include <Kinect/FrameBuffer.h>
-#include <iostream> // MM: added
+#include <iostream>
 
 namespace Kinect {
 
@@ -38,7 +38,10 @@ FrameSource::DepthCorrection::DepthCorrection(int sDegree,const int sNumSegments
 	:degree(sDegree),
 	 controlPoints(0)
 	{
-	std::cout << "Making FrameSource::DepthCorrection::DepthCorrection (from sDegree, sNumSegments)." << std::endl;  // MM: added
+	  
+	  
+	std::cout << "In FrameSource::DepthCorrection::DepthCorrection (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
+	  
 	/* Copy elements: */
 	for(int i=0;i<2;++i)
 		numSegments[i]=sNumSegments[i];
@@ -56,7 +59,7 @@ FrameSource::DepthCorrection::DepthCorrection(int sDegree,const int sNumSegments
 FrameSource::DepthCorrection::DepthCorrection(IO::File& file)
 	:controlPoints(0)
 	{
-	std::cout << "Making FrameSource::DepthCorrection::DepthCorrection (from file)." << std::endl;  // MM: added
+	std::cout << "In FrameSource::DepthCorrection::DepthCorrection (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
 	/* Read the B-spline degree and number of segments: */
 	degree=file.read<Misc::SInt32>();
 	for(int i=0;i<2;++i)
@@ -76,7 +79,7 @@ FrameSource::DepthCorrection::DepthCorrection(const FrameSource::DepthCorrection
 	:degree(source.degree),
 	 controlPoints(0)
 	{
-	std::cout << "Making FrameSource::DepthCorrection::DepthCorrection (from DepthCorrection)." << std::endl;  // MM: added
+	std::cout << "In FrameSource::DepthCorrection::DepthCorrection (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
 	/* Copy elements: */
 	for(int i=0;i<2;++i)
 		numSegments[i]=source.numSegments[i];
@@ -96,7 +99,6 @@ FrameSource::DepthCorrection::~DepthCorrection(void)
 
 void FrameSource::DepthCorrection::write(IO::File& file) const
 	{
-	std::cout << "In FrameSource::DepthCorrection::write." << std::endl;  // MM: added
 	/* Write the B-spline degree and number of segments: */
 	file.write<Misc::SInt32>(degree);
 	for(int i=0;i<2;++i)
@@ -109,7 +111,6 @@ void FrameSource::DepthCorrection::write(IO::File& file) const
 		file.write<Misc::Float32>(controlPoints[i].scale);
 		file.write<Misc::Float32>(controlPoints[i].offset);
 		}
-	std::cout << "Done with FrameSource::DepthCorrection::write." << std::endl;  // MM: added
 	}
 
 namespace {
@@ -142,7 +143,7 @@ inline float bs(int i,int n,float x)
 
 FrameSource::DepthCorrection::PixelCorrection FrameSource::DepthCorrection::getPixelCorrection(unsigned int x,unsigned int y,const unsigned int frameSize[2]) const
 	{
-	std::cout << "In FrameSource::DepthCorrection::getPixelCorrection." << std::endl;  // MM: added
+	std::cout << "In FrameSource::DepthCorrection::getPixelCorrection (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
 	/* Convert the pixel position to B-spline space: */
 	float dx=((float(x)+0.5f)*float(numSegments[0]))/float(frameSize[0]);
 	float dy=((float(y)+0.5f)*float(numSegments[1]))/float(frameSize[1]);
@@ -162,7 +163,6 @@ FrameSource::DepthCorrection::PixelCorrection FrameSource::DepthCorrection::getP
 			}
 		}
 	
-	std::cout << "Done with FrameSource::DepthCorrection::getPixelCorrection." << std::endl;  // MM: added
 	return result;
 	}
 
@@ -218,7 +218,7 @@ inline FrameSource::DepthCorrection::PixelCorrection bspline(int degree,const in
 
 FrameSource::DepthCorrection::PixelCorrection* FrameSource::DepthCorrection::getPixelCorrection(const unsigned int frameSize[2]) const
 	{
-	std::cout << "In FrameSource::DepthCorrection::getPixelCorrection (ptr)." << std::endl;  // MM: added
+	 std::cout << "In FrameSource::DepthCorrection::getPixelCorrection (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
 	/* Allocate the result array: */
 	PixelCorrection* result=new PixelCorrection[frameSize[1]*frameSize[0]];
 	
@@ -233,7 +233,6 @@ FrameSource::DepthCorrection::PixelCorrection* FrameSource::DepthCorrection::get
 			}
 		}
 	
-	std::cout << "Done with FrameSource::DepthCorrection::getPixelCorrection (ptr)." << std::endl;  // MM: added
 	return result;
 	}
 
@@ -243,7 +242,7 @@ Methods of class FrameSource:
 
 FrameSource::FrameSource(void)
 	{
-	std::cout << "Making FrameSource::FrameSource." << std::endl;  // MM: added
+	  std::cout << "In FrameSource::FrameSource (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
 	}
 
 FrameSource::~FrameSource(void)
@@ -258,15 +257,14 @@ void FrameSource::setTimeBase(const FrameSource::Time& newTimeBase)
 
 FrameSource::DepthCorrection* FrameSource::getDepthCorrectionParameters(void)
 	{
-	std::cout << "FrameSource::getDepthCorrectionParameters." << std::endl;  // MM: added
 	/* Create and return a dummy depth correction object: */
+	std::cout << "In FrameSource::DepthCorrection* FrameSource::getDepthCorrectionParameters (Kinect::FrameSource.cpp)." << std::endl; // MM: testing
 	int numSegments[2]={1,1};
 	return new DepthCorrection(0,numSegments);
 	}
 
 FrameSource::DepthRange FrameSource::getDepthRange(void) const
 	{
-	std::cout << "FrameSource::getDepthRange." << std::endl;  // MM: added
 	/* Return the full range of theoretically valid depth values: */
 	return DepthRange(0,invalidDepth-1);
 	}

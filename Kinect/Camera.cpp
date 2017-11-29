@@ -47,6 +47,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <GLMotif/TextFieldSlider.h>
 #include <Kinect/Internal/Config.h>
 #include <Kinect/FrameBuffer.h>
+#include <iostream>
 
 #define KINECT_CAMERA_DUMP_INIT 0
 
@@ -58,6 +59,7 @@ Methods of class Camera::CalibrationParameters:
 
 void Camera::CalibrationParameters::read(int subsection,IO::File& file)
 	{
+	std::cout << "In Camera::CalibrationParameters::read (Kinect::Camera.cpp)." << std::endl;  // MM: added
 	switch(subsection)
 		{
 		case 0:
@@ -113,12 +115,14 @@ void Camera::CalibrationParameters::read(int subsection,IO::File& file)
 
 void Camera::CalibrationParameters::read(IO::File& file)
 	{
+	std::cout << "In Camera::CalibrationParameters::read (Kinect::Camera.cpp)." << std::endl;  // MM: added
 	for(int i=0;i<4;++i)
 		read(i,file);
 	}
 
 void Camera::CalibrationParameters::write(IO::File& file) const
 	{
+	std::cout << "In Camera::CalibrationParameters::write (Kinect::Camera.cpp)." << std::endl;  // MM: added
 	file.write<Misc::SInt32>(dxCenter);
 	file.write<Misc::SInt32>(ax);
 	file.write<Misc::SInt32>(bx);
@@ -887,6 +891,7 @@ std::string getKinectSerialNumber(libusb_device* device,USB::DeviceList* deviceL
 
 void Camera::initialize(USB::DeviceList* deviceList)
 	{
+	std::cout << "In Camera::initialize (Kinect::Camera.cpp)." << std::endl;  // MM: added
 	/* Determine the Kinect's model number: */
 	libusb_device_descriptor dd=device.getDeviceDescriptor();
 	
@@ -1033,6 +1038,8 @@ Camera::~Camera(void)
 
 FrameSource::DepthCorrection* Camera::getDepthCorrectionParameters(void)
 	{
+	  
+	std::cout << "In FrameSource::DepthCorrection* Camera::getDepthCorrectionParameters (Kinect::Camera.cpp." << std::endl; // MM: testing
 	/* Assemble the name of the depth correction parameters file: */
 	std::string depthCorrectionFileName=KINECT_INTERNAL_CONFIG_CONFIGDIR;
 	depthCorrectionFileName.push_back('/');
@@ -1045,7 +1052,7 @@ FrameSource::DepthCorrection* Camera::getDepthCorrectionParameters(void)
 	if(IO::Directory::getCurrent()->getPathType(depthCorrectionFileName.c_str())==Misc::PATHTYPE_FILE)
 		{
 		try
-			{
+			{			  
 			/* Open the depth correction file: */
 			IO::FilePtr depthCorrectionFile(IO::Directory::getCurrent()->openFile(depthCorrectionFileName.c_str()));
 			depthCorrectionFile->setEndianness(Misc::LittleEndian);
@@ -1071,6 +1078,7 @@ FrameSource::DepthCorrection* Camera::getDepthCorrectionParameters(void)
 
 FrameSource::IntrinsicParameters Camera::getIntrinsicParameters(void)
 	{
+	std::cout << "In FrameSource::IntrinsicParameters Camera::getIntrinsicParameters (Kinect::Camera.cpp)." << std::endl; // MM: testing
 	/* Assemble the name of the intrinsic parameter file: */
 	std::string intrinsicParameterFileName=KINECT_INTERNAL_CONFIG_CONFIGDIR;
 	intrinsicParameterFileName.push_back('/');
@@ -1085,7 +1093,12 @@ FrameSource::IntrinsicParameters Camera::getIntrinsicParameters(void)
 	try
 		{
 		/* Open the parameter file: */
+		// MM: GETTING A SEG FAULT AT THE FOLLOWING LINE:
+		std::cout << "Trying to open file:" << std::endl; // EA: testing
+		std::cout << intrinsicParameterFileName.c_str() << std::endl; //EA: testing
 		IO::FilePtr parameterFile(IO::Directory::getCurrent()->openFile(intrinsicParameterFileName.c_str()));
+		//IO::FilePtr parameterFile = Vrui::openFile(intrinsicParameterFileName.c_str(),IO::File::ReadOnly); //MM: added. undefined ref to Vrui
+		std::cout << "Post trying to open file" << std::endl; // MM: testing
 		parameterFile->setEndianness(Misc::LittleEndian);
 		
 		/* Read the parameter file: */
@@ -1127,6 +1140,7 @@ FrameSource::IntrinsicParameters Camera::getIntrinsicParameters(void)
 		result.colorProjection=IntrinsicParameters::PTransform::identity;
 		}
 	
+	std::cout << "Done with FrameSource::IntrinsicParameters Camera::getIntrinsicParameters." << std::endl; // MM: testing
 	return result;
 	}
 
@@ -1143,6 +1157,7 @@ FrameSource::DepthRange Camera::getDepthRange(void) const
 
 void Camera::startStreaming(FrameSource::StreamingCallback* newColorStreamingCallback,FrameSource::StreamingCallback* newDepthStreamingCallback)
 	{
+	std::cout << "In Camera::startStreaming (Kinect::Camera.cpp)." << std::endl; // MM: testing
 	/* Open and prepare the device: */
 	device.open();
 	// device.setConfiguration(1); // This seems to confuse the device
@@ -1365,6 +1380,7 @@ std::string Camera::getSerialNumber(void)
 
 void Camera::configure(Misc::ConfigurationFileSection& configFileSection)
 	{
+	std::cout << "In Camera::configure (Kinect::Camera.cpp)." << std::endl; // MM: testing
 	/* Call the base class method: */
 	DirectFrameSource::configure(configFileSection);
 	
@@ -1444,6 +1460,7 @@ void Camera::buildSettingsDialog(GLMotif::RowColumn* settingsDialog)
 
 void Camera::getCalibrationParameters(Camera::CalibrationParameters& calib)
 	{
+	std::cout << "In Camera::getCalibrationParameters (Kinect::Camera.cpp)." << std::endl; // MM: testing
 	/* Temporarily open the device: */
 	bool tempOpen=!device.isOpen();
 	if(tempOpen)

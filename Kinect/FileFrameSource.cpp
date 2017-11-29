@@ -335,6 +335,7 @@ FileFrameSource::~FileFrameSource(void)
 
 FrameSource::DepthCorrection* FileFrameSource::getDepthCorrectionParameters(void)
 	{
+	std::cout << "In FrameSource::DepthCorrection* FileFrameSource::getDepthCorrectionParameters." << std::endl; // MM: testing
 	if(depthCorrection!=0)
 		{
 		/* Clone and return the depth correction object: */

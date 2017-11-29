@@ -34,6 +34,8 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #include <iostream>
 #endif
 #include <Threads/Atomic.h>
+#include <iostream>  // MM: added
+#include <stdexcept> // MM: added
 
 namespace Kinect {
 
@@ -90,7 +92,6 @@ class FrameBuffer
 	void* buffer; // Pointer to the reference-counted frame buffer
 	public:
 	double timeStamp; // Frame's time stamp in originating camera's own clock
-	
 	/* Constructors and destructors: */
 	public:
 	FrameBuffer(void) // Creates invalid frame buffer
@@ -98,9 +99,11 @@ class FrameBuffer
 		{
 		size[1]=size[0]=0;
 		}
+
 	FrameBuffer(int sizeX,int sizeY,size_t bufferSize) // Allocates a new frame buffer of the given frame size and size in bytes
 		:buffer(0),timeStamp(0.0)
 		{
+		std::cout << "In FrameBuffer (Kinect::FrameBuffer.cpp)." << std::endl;  // MM:added
 		/* Copy the frame size: */
 		size[0]=sizeX;
 		size[1]=sizeY;
@@ -186,15 +189,35 @@ class FrameBuffer
 	template <class ContentParam>
 	const ContentParam* getData(void) const // Returns the frame buffer as the given content type
 		{
+		 //LJ ADDED TRY CATCH
+		//std::cout << "In ContentParam* getData (Kinect::FrameBuffer.cpp)." << std::endl;
+		/*
+		try{
+		  static_cast<const ContentParam*>(buffer);
+		}
+		catch(std::runtime_error e){
+		  std::cerr << "Failed to convert to content param" << std::endl;
+		} */
 		return static_cast<const ContentParam*>(buffer);
 		}
 	template <class ContentParam>
 	ContentParam* getData(void) // Ditto
 		{
+		
+		 //LJ ADDED TRY CATCH
+		//std::cout << "In ContentParam* getData (Kinect::FrameBuffer.cpp)." << std::endl;
+		/*
+		try{
+		  static_cast<const ContentParam*>(buffer);
+		}
+		catch(std::runtime_error e){
+		  std::cerr << "Failed to convert to content param" << std::endl;
+		} */
 		return static_cast<ContentParam*>(buffer);
 		}
 	void invalidate(void) // Releases the currently-held buffer
 		{
+		std::cout << "In invalidate (Kinect::FrameBuffer.cpp)." << std::endl;  //MM: added
 		/* Invalidate the buffer: */
 		size[1]=size[0]=0;
 		
