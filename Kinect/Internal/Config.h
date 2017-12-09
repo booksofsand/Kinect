@@ -32,7 +32,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #define KINECT_INTERNAL_CONFIG_CAMERA_DEFAULTBACKGROUNDFILENAMEPREFIX "Background"
 #define KINECT_INTERNAL_CONFIG_CAMERA_BACKGROUNDFILENAMEEXTENSION ".background"
 
-#define KINECT_INTERNAL_CONFIG_SHADERDIR "/opt/Kinect//usr/local/share/Vrui-4.2/Kinect-3.2/Shaders"
+#define KINECT_INTERNAL_CONFIG_SHADERDIR "/opt/Kinect-3.2//usr/local/share/Vrui-4.2/Kinect-3.2/Shaders"
 
 #define KINECT_INTERNAL_CONFIG_KINECTSERVER_CONFIGURATIONFILENAME "KinectServer.cfg"
 
